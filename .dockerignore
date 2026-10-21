@@ -1,0 +1,12 @@
+node_modules
+data
+.env
+.env.*
+dist
+test-results
+playwright-report
+.git
+*.log
+certs
+.venv
+__pycache__

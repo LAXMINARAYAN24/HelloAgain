@@ -1,0 +1,35 @@
+{
+  "name": "helloagain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "start": "node --env-file-if-exists=.env backend/server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "admin": "node --env-file-if-exists=.env scripts/admin.mjs",
+    "check": "npm run test && npm run build",
+    "test:browser": "node tests/browser.mjs",
+    "test:calls": "node tests/calls-browser.mjs"
+  },
+  "dependencies": {
+    "express": "5.3.0",
+    "helmet": "8.3.0",
+    "lucide-react": "1.60.0",
+    "nodemailer": "10.1.7",
+    "pg": "8.23.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "ws": "8.22.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@vitejs/plugin-react": "6.1.2",
+    "vite": "8.3.4"
+  }
+}
