@@ -1,3 +1,5 @@
+Hosted pilot verification: see [public-pilot.md](public-pilot.md).
+
 # Verification — 21 October 2026
 
 ## Passed locally
@@ -10,12 +12,12 @@
 
 Screenshots from these tests are under `docs/screenshots/`: `random-home-desktop.png`, `random-home-mobile.png`, `live-call-test.png`, `live-call-mobile-test.png`. Older discovery screenshots describe historical UI and are not the current home.
 
-Email integration checks verify production rejects a local outbox or missing credentials, recovery requests use a fixed HTTPS provider endpoint with the configured sender/recipient/site link, redirects are refused, and provider/network errors remain generic. No external email was sent.
+Email integration checks verify production rejects a local outbox or missing credentials, recovery requests use a fixed HTTPS provider endpoint with the configured sender/recipient/site link, redirects are refused, and provider/network errors remain generic. These isolated checks sent no external email; a separate owner-approved hosted recovery test was later marked Delivered by Brevo (see public-pilot.md).
 
 ## Release cleanup
 
-The interactive demonstration page, four synthetic demo participants, generated tones, lab launcher and alternate test-token authentication have been removed. Retired demonstration URLs return 404. Automated checks remain development-only and do not create test accounts in the member database. The built client contains no interactive call-lab code.
+The interactive demonstration page, four synthetic demo participants, generated tones, lab launcher and alternate test-token authentication have been removed. Retired demonstration URLs return 404. Automated checks remain development-only; the separate hosted media check removed all its disposable records afterward. The built client contains no interactive call-lab code.
 
 ## Limits of verification
 
-No public deployment, hosted database, production SMTP delivery, Docker runtime or actual physical two-device camera session has been validated. No throughput/load or broad model-accuracy evaluation has been completed. Real cameras, clothing, lighting and network conditions vary. The screening worker cannot guarantee prevention of every unsafe image or verify real gender/age/liveness. Public launch still needs the operator measures in `deployment.md`.
+The Render Docker deployment, encrypted hosted PostgreSQL, real Brevo HTTPS recovery-email delivery and two simultaneous public-host media calls have passed the checks recorded in public-pilot.md. An actual physical two-device camera session has not been validated. No sustained throughput/load or broad model-accuracy evaluation has been completed. Real cameras, clothing, lighting and network conditions vary. The screening worker cannot guarantee prevention of every unsafe image or verify real gender/age/liveness. Broad promotion still needs the operator measures in deployment.md.

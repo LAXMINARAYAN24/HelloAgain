@@ -1,4 +1,4 @@
-# Email activation handoff
+# Email configuration
 
 The owner requested real email setup before the public website is launched.
 
@@ -14,6 +14,6 @@ The owner requested real email setup before the public website is launched.
 4. Configure `EMAIL_MODE=brevo`, `EMAIL_FROM=<verified sender email>` and `EMAIL_FROM_NAME=HelloAgain`.
 5. After the hosted application/database is configured, verify real password recovery and inbox delivery using a controlled account before inviting public users.
 
-The user must complete account sign-in, any terms acceptance, email verification and API-key creation steps. API keys are never committed, placed in the source archive, or requested in chat. No real provider account or sender has been verified yet.
+The user must complete account sign-in, any terms acceptance, email verification and API-key creation steps. API keys are never committed, placed in the source archive, or requested in chat. The live pilot now has a verified sender and restricted transactional-email key in Render secrets. Brevo confirmed delivery of the owner-approved recovery test on 21 October 2026. See public-pilot.md for the actual deployment state.
 
 Primary references: https://developers.brevo.com/docs/send-a-transactional-email and https://help.brevo.com/hc/en-us/articles/208836149-Create-a-new-sender-From-name-and-From-email .

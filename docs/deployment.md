@@ -1,4 +1,6 @@
-# Deployment handover — no deployment performed
+Current deployment: https://helloagain-live.onrender.com/ . See [public-pilot.md](public-pilot.md) for the verified pilot state, resource identities, email delivery and database expiry. The guidance below includes requirements still outstanding before broad public promotion.
+
+# Deployment guide
 
 ## Architecture
 
@@ -8,7 +10,7 @@ The current local database is SQLite. A PostgreSQL adapter is implemented for la
 
 ## Recommended first hosted topology
 
-One Docker-capable application host with WebSocket support serves the built frontend, `/api`, media relay and Python/ONNX screening worker, with managed PostgreSQL/Supabase and a transactional email provider. Source is uploaded to https://github.com/LAXMINARAYAN24/HelloAgain . The signed-in Render dashboard is accessible in the user’s browser even though the connector returns USER_NOT_LOGGED_IN. The owner chose verified email setup before public deployment; no new service has been provisioned. Plan a single application instance for this pilot because call/queue state is in memory. Horizontal scaling requires shared queue/signaling and media routing work. Choose the host and data region after deciding the launch country. The included Dockerfile is a deployment starting point, not a verified container release.
+One Docker-capable application host with WebSocket support serves the built frontend, `/api`, media relay and Python/ONNX screening worker, with managed PostgreSQL/Supabase and a transactional email provider. Source is uploaded to https://github.com/LAXMINARAYAN24/HelloAgain . The signed-in Render dashboard is accessible in the user’s browser even though the connector returns USER_NOT_LOGGED_IN. The owner chose verified email setup before public deployment; a free pilot service and PostgreSQL database have now been provisioned. Plan a single application instance for this pilot because call/queue state is in memory. Horizontal scaling requires shared queue/signaling and media routing work. Choose the host and data region after deciding the launch country. The Dockerfile is verified by the live Render deployment.
 
 Cloudflare Pages can host the static frontend only if a same-origin proxy routes `/api` to the Node host. Simply uploading `dist/` will not produce a functioning database-backed app. The earlier free-static-hosting proposal therefore needs an API host as well. Free tier capacity, uptime, SMTP, backups, video, and moderation are separate costs or limits.
 
@@ -28,7 +30,7 @@ Production startup requires:
 - `VIDEO_ENABLED=true` and `VIDEO_PYTHON` pointing to Python with `requirements-video.txt` installed (the Dockerfile uses `/opt/video/bin/python`).
 - A PostgreSQL connection using certificate verification; use `PG_CA_CERT_PATH` when the provider requires its CA. Do not use a connection string that disables certificate verification.
 
-The initial database credential must be allowed to create and own the private schema and tables. After initialization, review and restrict its permissions to the application schema. Do not reuse a broad operator credential elsewhere. The application implements custom email/password authentication; it does not use Supabase Auth. Email ownership verification is not yet implemented and must be added before public signup.
+The initial database credential must be allowed to create and own the private schema and tables. After initialization, review and restrict its permissions to the application schema. Do not reuse a broad operator credential elsewhere. The application implements custom email/password authentication; it does not use Supabase Auth. Email ownership at signup is not yet verified; resolve this before broad promotion.
 
 ## Build and start
 
@@ -50,7 +52,7 @@ Browser tests currently expect Microsoft Edge on Windows. Adapt the Playwright c
 - Roles come from database records, never editable profile claims. Provision the operator with `npm run admin -- --email owner@your-domain` after creating their account. Set up operator MFA before public launch; MFA is not implemented in this local build.
 - Messages and ended random-room linkage records expire after 90 days. Report excerpts expire after 30 days; reports and audit records after 90 days. Cleanup runs at startup and hourly. Expired reset/session/rate-limit records are removed too.
 - Account deletion removes sessions, reset tokens, profile, connections, and chats; it clears report details/evidence and moderation notes involving the user. Shared backup copies need their own expiry procedure.
-- Local reset emails are written under `data/mail/` and never exposed through HTTP. They expire from the local outbox after 24 hours during cleanup and are removed when the account is deleted. Production sends SMTP instead; provider mailbox/log retention must be documented separately.
+- Local reset emails are written under `data/mail/` and never exposed through HTTP. They expire from the local outbox after 24 hours during cleanup and are removed when the account is deleted. Production uses the configured real provider (Brevo HTTPS in this pilot); provider mailbox/log retention must be documented separately.
 - Use `node scripts/backup.mjs` for a consistent manual SQLite backup under `data/backups/`. It can run while the local server is active. Local backups are not scheduled, encrypted, automatically deleted, or uploaded by this build. Keep access restricted and remove them on a defined schedule.
 - Before production, configure encrypted managed PostgreSQL backups, a short retention schedule (for example seven days if appropriate), recovery tests, a restore/deletion replay procedure, and access controls. Restoring a backup must not silently resurrect deleted users.
 - The app does not provide end-to-end encryption. Private messages are access-controlled by the server; report excerpts may be read by administrators.
@@ -63,10 +65,10 @@ Finalize operator identity, launch country, support/appeal and child-safety cont
 
 Current capacity is deliberately two simultaneous calls with a 15-minute pilot limit. Memory-only rooms and waiting queues reset on restart; the database marks prior random rooms closed. This is a single-instance pilot, not a scalable multi-region service. Browser camera/microphone access requires HTTPS except on localhost. Reverse proxies must permit WebSocket upgrades and long-lived connections, and must route `/api/video/stream` to the same instance as REST signaling. No TURN account is needed for this server-WebSocket architecture, but the server pays the media bandwidth and screening compute.
 
-Local dependencies are installed and tested. Docker startup, hosted PostgreSQL, production SMTP, hosted media latency and public capacity are unverified. Do not interpret the supplied Dockerfile as a completed deployment. A static Sites/Pages upload cannot run this Python/Node backend. No Play Store listing or Android binary exists.
+Local dependencies, Render Docker startup, hosted PostgreSQL and real Brevo HTTPS recovery delivery are verified. Two simultaneous hosted media calls passed with synthetic cameras/audio. Sustained load, physical devices and broader public capacity remain unverified. A static Sites/Pages upload cannot run this Python/Node backend. No Play Store listing or Android binary exists.
 
 ## Verified Render free-tier constraints
 
 The current Render documentation says free web services have no persistent local disk, and free Postgres databases expire after 30 days. Free web services also cannot send traffic on SMTP ports 25, 465 or 587. The application now supports Brevo HTTPS email delivery in production. A free Render release must use that integration with an activated email account and verified sender; ordinary SMTP settings will not solve the port restriction. Do not silently switch to a paid instance, disable production checks, or store member data on ephemeral SQLite to bypass these constraints. Source: https://render.com/docs/free .
 
-The hosting connector’s current error is authentication, not lack of authorization from the user: the user has already requested publication. The tested source is uploaded to the provided GitHub repository. Email account/sender verification and hosted database configuration remain outstanding; real email delivery and public hosting are not yet validated.
+The hosting connector’s current error is authentication, not lack of authorization from the user: the user has already requested publication. The tested source is uploaded to the provided GitHub repository. Email account/sender setup and hosted database configuration are complete for the free pilot; actual email delivery and public hosting are verified in public-pilot.md.
