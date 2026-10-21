@@ -8,7 +8,7 @@ The current local database is SQLite. A PostgreSQL adapter is implemented for la
 
 ## Recommended first hosted topology
 
-One Docker-capable application host with WebSocket support serves the built frontend, `/api`, media relay and Python/ONNX screening worker, with managed PostgreSQL/Supabase and a transactional SMTP provider. Render is installed but the account is not yet authenticated (latest read-only request returned USER_NOT_LOGGED_IN). No GitHub/GitLab/Bitbucket remote exists for this local project, so no service or deployment has been created. Complete Render sign-in and connect a source repository before provisioning. Plan a single application instance for this pilot because call/queue state is in memory. Horizontal scaling requires shared queue/signaling and media routing work. Choose the host and data region after deciding the launch country. The included Dockerfile is a deployment starting point, not a verified container release.
+One Docker-capable application host with WebSocket support serves the built frontend, `/api`, media relay and Python/ONNX screening worker, with managed PostgreSQL/Supabase and a transactional email provider. Source is uploaded to https://github.com/LAXMINARAYAN24/HelloAgain . The signed-in Render dashboard is accessible in the user’s browser even though the connector returns USER_NOT_LOGGED_IN. The owner chose verified email setup before public deployment; no new service has been provisioned. Plan a single application instance for this pilot because call/queue state is in memory. Horizontal scaling requires shared queue/signaling and media routing work. Choose the host and data region after deciding the launch country. The included Dockerfile is a deployment starting point, not a verified container release.
 
 Cloudflare Pages can host the static frontend only if a same-origin proxy routes `/api` to the Node host. Simply uploading `dist/` will not produce a functioning database-backed app. The earlier free-static-hosting proposal therefore needs an API host as well. Free tier capacity, uptime, SMTP, backups, video, and moderation are separate costs or limits.
 
@@ -21,9 +21,9 @@ Production startup requires:
 - `NODE_ENV=production`
 - `DEMO_MODE=false`
 - `HOST=0.0.0.0` and the platform’s assigned `PORT`
-- `APP_ORIGIN=https://your-actual-domain`
+- `APP_ORIGIN=https://your-actual-domain`, or omit it on Render to use the documented `RENDER_EXTERNAL_URL`.
 - `DATABASE_URL` pointing at the private PostgreSQL database
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, and the provider’s authentication settings (`SMTP_USER`, `SMTP_PASSWORD` when required)
+- An actual email provider: `EMAIL_MODE=brevo`, secret `BREVO_API_KEY` and a provider-verified `EMAIL_FROM` sender; optionally `EMAIL_FROM_NAME=HelloAgain`. Alternatively use `EMAIL_MODE=smtp` with `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM` and provider credentials on a host that permits SMTP.
 - TLS-protected SMTP: port 587 with STARTTLS, or `SMTP_SECURE=true` for a provider that uses implicit TLS (usually port 465)
 - `VIDEO_ENABLED=true` and `VIDEO_PYTHON` pointing to Python with `requirements-video.txt` installed (the Dockerfile uses `/opt/video/bin/python`).
 - A PostgreSQL connection using certificate verification; use `PG_CA_CERT_PATH` when the provider requires its CA. Do not use a connection string that disables certificate verification.
@@ -67,6 +67,6 @@ Local dependencies are installed and tested. Docker startup, hosted PostgreSQL, 
 
 ## Verified Render free-tier constraints
 
-The current Render documentation says free web services have no persistent local disk, and free Postgres databases expire after 30 days. Free web services also cannot send traffic on SMTP ports 25, 465 or 587. The current application uses SMTP in production, so a free Render release needs a supported HTTPS email-provider integration before relying on password recovery; merely entering SMTP settings will not solve that limitation. Do not silently switch to a paid instance, disable production checks, or store member data on ephemeral SQLite to bypass these constraints. Source: https://render.com/docs/free .
+The current Render documentation says free web services have no persistent local disk, and free Postgres databases expire after 30 days. Free web services also cannot send traffic on SMTP ports 25, 465 or 587. The application now supports Brevo HTTPS email delivery in production. A free Render release must use that integration with an activated email account and verified sender; ordinary SMTP settings will not solve the port restriction. Do not silently switch to a paid instance, disable production checks, or store member data on ephemeral SQLite to bypass these constraints. Source: https://render.com/docs/free .
 
-The hosting connector’s current error is authentication, not lack of authorization from the user: the user has already requested publication. The local changes and sanitized source archive are ready for upload once account/repository access is available.
+The hosting connector’s current error is authentication, not lack of authorization from the user: the user has already requested publication. The tested source is uploaded to the provided GitHub repository. Email account/sender verification and hosted database configuration remain outstanding; real email delivery and public hosting are not yet validated.

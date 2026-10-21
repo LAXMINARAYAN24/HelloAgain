@@ -23,7 +23,7 @@ const reportSchema=z.object({target:text(1,100),reason:z.enum(['black_screen','n
 
 export async function createApplication(options={}){
  const production=options.production??process.env.NODE_ENV==='production';
- const origin=options.origin??process.env.APP_ORIGIN??'http://localhost:4310';
+ const origin=options.origin??process.env.APP_ORIGIN??process.env.RENDER_EXTERNAL_URL??'http://localhost:4310';
  const databaseUrl=options.databaseUrl??process.env.DATABASE_URL;
  if(production&&(!origin.startsWith('https://')||!databaseUrl||process.env.DEMO_MODE==='true'))throw new Error('Production requires HTTPS APP_ORIGIN, DATABASE_URL, and DEMO_MODE=false.');
  const mailer=createMailer({production,origin,mailDirectory:options.mailDirectory});

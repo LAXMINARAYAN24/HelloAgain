@@ -42,8 +42,14 @@ To grant an existing operator account moderation access, run `npm run admin -- -
 
 ## Hosting
 
-The website runs independently in an ordinary browser. Localhost works without deployment. Access from other devices needs a public HTTPS host with WebSocket support, Node 24, Python/ONNX and sufficient CPU/memory, plus a production PostgreSQL database and SMTP email service. The included Dockerfile prepares this topology. It has not been validated in a running Docker engine or on a public host.
+The website runs independently in an ordinary browser. Localhost works without deployment. Access from other devices needs a public HTTPS host with WebSocket support, Node 24, Python/ONNX and sufficient CPU/memory, plus a production PostgreSQL database and a configured email provider (SMTP or Brevo HTTPS). The included Dockerfile prepares this topology. It has not been validated in a running Docker engine or on a public host.
 
-This backend cannot run as a static-only upload or inside the Sites Cloudflare Worker runtime. The Render plugin is installed, but its latest account request returned “not connected.” No Git source repository is attached, and no public URL exists. Finish Render sign-in and connect GitHub (or supply the existing repository URL) to continue publishing. No paid resources have been created. Free/unlimited video hosting is not promised: bandwidth, screening compute, email, database, moderation and uptime have finite capacity.
+This backend cannot run as a static-only upload or inside the Sites Cloudflare Worker runtime. The source is now uploaded to https://github.com/LAXMINARAYAN24/HelloAgain . Browser access to the signed-in Render dashboard works; the separate hosting connector still returns “not connected.” Publication is waiting for verified email-provider setup, as requested by the owner. No public URL exists yet. No paid resources have been created. Free/unlimited video hosting is not promised: bandwidth, screening compute, email, database, moderation and uptime have finite capacity.
 
 See `docs/deployment.md` for configuration and remaining public-launch work. A Play Store app is not required to use the website; no Android package or store submission has been built.
+
+## Email for free Render hosting
+
+Brevo HTTPS delivery is implemented so the application can send recovery emails without SMTP ports. In Render’s secret environment settings, configure `EMAIL_MODE=brevo`, `BREVO_API_KEY`, `EMAIL_FROM` (a sender verified in the email-provider account) and optionally `EMAIL_FROM_NAME=HelloAgain`. Store the API key in the hosting secret manager. Production refuses local-only mail and incomplete Brevo configuration. Sender verification, provider activation and real delivery still need to be completed; automated checks used a simulated provider and sent no external email.
+
+SMTP remains supported on hosts that permit it. The local Windows preview keeps its private local-email outbox. The owner chose email setup before public launch.
