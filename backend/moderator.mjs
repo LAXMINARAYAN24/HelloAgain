@@ -6,7 +6,7 @@ import {createInterface} from 'node:readline';
 export async function createModerator(){
  const local=process.platform==='win32'?'.venv/Scripts/python.exe':'.venv/bin/python';
  const python=process.env.VIDEO_PYTHON??(existsSync(local)?resolve(local):'python');
- const child=spawn(python,['-u',resolve('backend/moderation_worker.py')],{stdio:['pipe','pipe','pipe'],windowsHide:true,env:{...process.env,OMP_NUM_THREADS:'2'}});
+ const child=spawn(python,['-u',resolve('backend/moderation_worker.py')],{stdio:['pipe','pipe','pipe'],windowsHide:true,env:{...process.env,OMP_NUM_THREADS:'1',OPENBLAS_NUM_THREADS:'1',MKL_NUM_THREADS:'1'}});
  const pending=new Map();let sequence=0,healthy=false,closed=false;
  let resolveReady;const ready=new Promise(resolve=>{resolveReady=resolve;});
  const stop=()=>{healthy=false;for(const task of pending.values()){clearTimeout(task.timer);task.reject(new Error('Camera screening is unavailable.'));}pending.clear();resolveReady(false);};
