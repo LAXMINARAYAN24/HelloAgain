@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { existsSync } from 'node:fs';
+import { createTraffic } from './traffic.mjs';
 import { createMailer } from './mail.mjs';
 import { createModerator } from './moderator.mjs';
 import { createVideoService } from './video-service.mjs';
@@ -28,6 +29,9 @@ export async function createApplication(options={}){
  if(production&&(!origin.startsWith('https://')||!databaseUrl||process.env.DEMO_MODE==='true'))throw new Error('Production requires HTTPS APP_ORIGIN, DATABASE_URL, and DEMO_MODE=false.');
  const mailer=createMailer({production,origin,mailDirectory:options.mailDirectory});
  const store=await openDatabase({path:options.databasePath??process.env.SQLITE_PATH,url:databaseUrl,caPath:process.env.PG_CA_CERT_PATH});
+ const traffic=createTraffic({ownerEmail:options.analyticsOwnerEmail??process.env.ANALYTICS_OWNER_EMAIL??'',origin});
+ await store.transaction(db=>traffic.initialize(db));
+ const selfProfile=u=>({...ownProfile(u),canViewTraffic:traffic.isOwner(u)});
  const demo=!production&&store.kind==='sqlite'&&(options.demo??process.env.DEMO_MODE==='true');
  if(demo)await seedDemo(store);
  const app=express();
@@ -76,15 +80,17 @@ export async function createApplication(options={}){
  const video=createVideoService({store,moderator,authenticate:session,connection,allowedOrigins:production?[origin]:[origin,'http://localhost:4310','http://127.0.0.1:4310','http://127.0.0.1:4311','http://localhost:4311']});
 
  route('get','/api/config',async()=>({brand:'HelloAgain',demo,videoEnabled:video.ready(),videoReason:video.ready()?'Random live calls are available after both adults press Start. Each transmitted picture is screened on this server.':'Live video is locked because camera screening is unavailable.',interests:INTERESTS,colors:COLORS,consentVersion:consent}),{auth:false});
+ route('post','/api/traffic/pageview',(db,u,req)=>traffic.record(db,u,req),{auth:false});
+ route('get','/api/owner/traffic',(db,u)=>traffic.overview(db,u));
  app.get('/api/health',(_req,res)=>res.json({ok:true}));
- route('get','/api/me',async(_db,u)=>({user:u?ownProfile(u):null}),{auth:false});
+ route('get','/api/me',async(_db,u)=>({user:u?selfProfile(u):null}),{auth:false});
  route('post','/api/auth/signup',async(db,_u,req,res)=>{
    await limit(db,`signup:${req.ip}`,8,3600000);const v=signup.parse(req.body);const d=new Date(`${v.dob}T00:00:00Z`);const age=ageOf(v.dob);
    if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==v.dob||age<18||age>99)fail(400,'You must be between 18 and 99 years old to join.');
    if(await db.get('SELECT id FROM users WHERE email=?',[v.email]))fail(409,'This email cannot be used. Try signing in.');
    const id=randomUUID(),time=now();const hash=await hashPassword(v.password);
    await db.run('INSERT INTO users(id,email,password_hash,name,dob,gender,city,bio,interests,color,consent_version,created_at,last_seen) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',[id,v.email,hash,v.name,v.dob,v.gender,v.city,v.bio,JSON.stringify(v.interests),v.color,consent,time,time]);
-   const u=await db.get('SELECT * FROM users WHERE id=?',[id]);await issueSession(db,u,res);res.status(201);return {user:ownProfile(u)};
+   const u=await db.get('SELECT * FROM users WHERE id=?',[id]);await issueSession(db,u,res);res.status(201);return {user:selfProfile(u)};
  },{auth:false});
  route('post','/api/auth/login',async(db,_u,req,res)=>{
    await limit(db,`login:${req.ip}`,15,900000);const v=z.object({email,password:z.string().max(256)}).parse(req.body);await limit(db,`login-email:${hashToken(v.email)}`,15,900000);
@@ -93,14 +99,14 @@ export async function createApplication(options={}){
    const fallback='scrypt$00000000000000000000000000000000$'+'00'.repeat(64);
    const valid=await verifyPassword(v.password,u?.password_hash??fallback);if(!u||!valid)fail(401,'Email or password is incorrect.');
    if(u.status!=='active')fail(403,`Your account is ${u.status}. Contact the operator to appeal.`);
-   await issueSession(db,u,res);return {user:ownProfile(u)};
+   await issueSession(db,u,res);return {user:selfProfile(u)};
  },{auth:false});
- route('post','/api/auth/demo',async(db,_u,_req,res)=>{if(!demo)fail(404,'Demo is unavailable.');const u=await db.get('SELECT * FROM users WHERE email=?',[DEMO_EMAIL]);if(!u||u.status!=='active')fail(403,'Demo account is unavailable.');await issueSession(db,u,res);return {user:ownProfile(u)};},{auth:false});
+ route('post','/api/auth/demo',async(db,_u,_req,res)=>{if(!demo)fail(404,'Demo is unavailable.');const u=await db.get('SELECT * FROM users WHERE email=?',[DEMO_EMAIL]);if(!u||u.status!=='active')fail(403,'Demo account is unavailable.');await issueSession(db,u,res);return {user:selfProfile(u)};},{auth:false});
  route('post','/api/auth/logout',async(db,_u,req,res)=>{const token=cookieToken(req);if(token)await db.run('DELETE FROM sessions WHERE token_hash=?',[hashToken(token)]);if(_u)video.endForUser(_u.id,'Signed out.');clearCookie(res);},{auth:false});
  route('post','/api/auth/recovery',async(db,_u,req)=>{await limit(db,`recovery:${req.ip}`,5,3600000);const address=email.parse(req.body.email);const u=await db.get("SELECT id FROM users WHERE email=? AND status='active'",[address]);if(u){const token=newToken();await db.run('INSERT INTO account_tokens(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)',[hashToken(token),u.id,new Date(Date.now()+1800000).toISOString(),now()]);try{await mailer.reset(address,token);}catch{await db.run('DELETE FROM account_tokens WHERE token_hash=?',[hashToken(token)]);console.error('Recovery email delivery failed. Check the mail provider configuration.');}}
  return {message:mailer.mode==='local'?'If an active account exists, its reset email is saved in the server’s data/mail folder for this local preview.':'If an active account exists, a reset link has been sent. Check your email.'};},{auth:false});
  route('post','/api/auth/reset',async(db,_u,req,res)=>{await limit(db,`reset:${req.ip}`,10,900000);const v=z.object({token:text(20,200),password}).strict().parse(req.body);const row=await db.get("SELECT t.user_id FROM account_tokens t JOIN users u ON u.id=t.user_id WHERE t.token_hash=? AND t.expires_at>? AND u.status='active'",[hashToken(v.token),now()]);if(!row)fail(400,'This reset link is invalid or expired. Request a new one.');await db.run('UPDATE users SET password_hash=? WHERE id=?',[await hashPassword(v.password),row.user_id]);await db.run('DELETE FROM account_tokens WHERE user_id=?',[row.user_id]);await db.run('DELETE FROM sessions WHERE user_id=?',[row.user_id]);video.endForUser(row.user_id,'Password changed.');clearCookie(res);return {ok:true};},{auth:false});
- route('put','/api/profile',async(db,u,req)=>{const v=profileUpdate.parse(req.body);await db.run('UPDATE users SET name=?,city=?,bio=?,interests=?,color=?,visible=?,age_min=?,age_max=? WHERE id=?',[v.name,v.city,v.bio,JSON.stringify(v.interests),v.color,Number(v.visible),v.ageMin,v.ageMax,u.id]);return {user:ownProfile(await db.get('SELECT * FROM users WHERE id=?',[u.id]))};});
+ route('put','/api/profile',async(db,u,req)=>{const v=profileUpdate.parse(req.body);await db.run('UPDATE users SET name=?,city=?,bio=?,interests=?,color=?,visible=?,age_min=?,age_max=? WHERE id=?',[v.name,v.city,v.bio,JSON.stringify(v.interests),v.color,Number(v.visible),v.ageMin,v.ageMax,u.id]);return {user:selfProfile(await db.get('SELECT * FROM users WHERE id=?',[u.id]))};});
  route('get','/api/discover',async(db,u,req)=>{
    const candidates=await db.all("SELECT * FROM users WHERE gender<>? AND id<>? AND visible=1 AND status='active' ORDER BY created_at DESC LIMIT 500",[u.gender,u.id]);
    const relations=await db.all('SELECT * FROM connections WHERE user_a=? OR user_b=?',[u.id,u.id]);const allBlocks=await db.all('SELECT * FROM blocks WHERE blocker=? OR blocked=?',[u.id,u.id]);const hidden=new Set(allBlocks.map(b=>b.blocker===u.id?b.blocked:b.blocker));
@@ -148,11 +154,12 @@ export async function createApplication(options={}){
  route('post','/api/admin/reports/:id/resolve',async(db,u,req)=>{const v=z.object({action:z.enum(['ban','suspend','dismiss']),note:text(5,500)}).strict().parse(req.body);const r=await db.get("SELECT * FROM reports WHERE id=? AND status='open'",[req.params.id]);if(!r)fail(404,'Open report not found.');if(v.action!=='dismiss'){if(!r.target||r.target===u.id)fail(400,'This account cannot be moderated here.');await db.run('UPDATE users SET status=?,status_reason=? WHERE id=?',[v.action==='ban'?'banned':'suspended',v.note,r.target]);await db.run('DELETE FROM sessions WHERE user_id=?',[r.target]);video.endForUser(r.target,'Account access removed.');}await db.run('UPDATE reports SET status=?,action=?,resolved_at=? WHERE id=?',[v.action==='dismiss'?'dismissed':'resolved',v.action,now(),r.id]);await audit(db,u.id,r.target,v.action,v.note);},{admin:true});
  route('post','/api/admin/users/:id/status',async(db,u,req)=>{const v=z.object({status:z.enum(['active','suspended','banned']),note:text(5,500)}).strict().parse(req.body);if(req.params.id===u.id)fail(400,'You cannot change your own status.');const target=await db.get('SELECT id FROM users WHERE id=?',[req.params.id]);if(!target)fail(404,'Account not found.');await db.run('UPDATE users SET status=?,status_reason=? WHERE id=?',[v.status,v.note,target.id]);await db.run('DELETE FROM sessions WHERE user_id=?',[target.id]);video.endForUser(target.id,'Account access changed.');await audit(db,u.id,target.id,v.status==='active'?'restore':v.status,v.note);},{admin:true});
  app.use('/api',(_req,res)=>res.status(404).json({error:'Endpoint not found.'}));
+ app.use('/owner',(_req,res,next)=>{res.set('X-Robots-Tag','noindex, nofollow');next();});
  // Retired demonstration URLs must not fall back to the real application.
  app.use('/call-lab',(_req,res)=>res.sendStatus(404));
  const dist=resolve('dist');if(existsSync(dist)){app.use(express.static(dist,{index:false}));app.get('/{*path}',(req,res)=>{if(req.path.includes('.'))return res.sendStatus(404);res.set('Cache-Control','no-cache').sendFile(resolve(dist,'index.html'));});}
  app.use((err,_req,res,_next)=>{if(res.headersSent)return;const status=err.status??(err instanceof z.ZodError?400:500);if(status===500)console.error('Request failed:',err.message);const message=err instanceof z.ZodError?err.issues.map(i=>`${i.path.join('.')}: ${i.message}`).join(' · '):status>=500&&!err.status?'This service is unavailable. Please try again later.':err.message;res.status(status).json({error:message});});
- async function cleanup(){await mailer.purge();return store.transaction(async db=>{await db.run('DELETE FROM sessions WHERE expires_at<?',[now()]);await db.run('DELETE FROM account_tokens WHERE expires_at<?',[now()]);await db.run('DELETE FROM rate_limits WHERE reset_at<?',[Date.now()]);await db.run('DELETE FROM messages WHERE created_at<?',[new Date(Date.now()-90*86400000).toISOString()]);await db.run("UPDATE reports SET context='[]' WHERE created_at<?",[new Date(Date.now()-30*86400000).toISOString()]);await db.run('DELETE FROM reports WHERE created_at<?',[new Date(Date.now()-90*86400000).toISOString()]);await db.run('DELETE FROM audit WHERE created_at<?',[new Date(Date.now()-90*86400000).toISOString()]);await db.run('DELETE FROM random_rooms WHERE ended_at<?',[new Date(Date.now()-90*86400000).toISOString()]);});}
+ async function cleanup(){await mailer.purge();return store.transaction(async db=>{await traffic.cleanup(db);await db.run('DELETE FROM sessions WHERE expires_at<?',[now()]);await db.run('DELETE FROM account_tokens WHERE expires_at<?',[now()]);await db.run('DELETE FROM rate_limits WHERE reset_at<?',[Date.now()]);await db.run('DELETE FROM messages WHERE created_at<?',[new Date(Date.now()-90*86400000).toISOString()]);await db.run("UPDATE reports SET context='[]' WHERE created_at<?",[new Date(Date.now()-30*86400000).toISOString()]);await db.run('DELETE FROM reports WHERE created_at<?',[new Date(Date.now()-90*86400000).toISOString()]);await db.run('DELETE FROM audit WHERE created_at<?',[new Date(Date.now()-90*86400000).toISOString()]);await db.run('DELETE FROM random_rooms WHERE ended_at<?',[new Date(Date.now()-90*86400000).toISOString()]);});}
  await store.transaction(async db=>{await db.run("UPDATE connections SET status='closed',updated_at=? WHERE id IN (SELECT connection_id FROM random_rooms WHERE ended_at IS NULL)",[now()]);await db.run('UPDATE random_rooms SET ended_at=? WHERE ended_at IS NULL',[now()]);});
  await cleanup();
  return {app,store,cleanup,demo,video,close:async()=>{await video.close();await store.close();}};

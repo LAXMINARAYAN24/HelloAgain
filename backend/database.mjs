@@ -21,7 +21,7 @@ export async function openDatabase({ path = './data/helloagain.sqlite', url, caP
       await setup.query('REVOKE ALL ON SCHEMA helloagain FROM PUBLIC');
       await setup.query('SET search_path TO helloagain');
       await setup.query(schema);
-      for(const table of ['users','sessions','account_tokens','connections','messages','random_rooms','blocks','reports','audit','rate_limits'])await setup.query(`ALTER TABLE helloagain.${table} ENABLE ROW LEVEL SECURITY`);
+      for(const table of ['users','sessions','account_tokens','connections','messages','random_rooms','blocks','reports','audit','rate_limits','traffic_meta','traffic_daily','traffic_seen'])await setup.query(`ALTER TABLE helloagain.${table} ENABLE ROW LEVEL SECURITY`);
       // Explicitly revoke browser roles when running on Supabase.
       await setup.query(`DO $$ BEGIN
         IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN

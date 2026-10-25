@@ -60,3 +60,13 @@ CREATE TABLE IF NOT EXISTS audit (
 CREATE TABLE IF NOT EXISTS rate_limits (
  key TEXT PRIMARY KEY, hits INTEGER NOT NULL, reset_at BIGINT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS traffic_meta (
+ id INTEGER PRIMARY KEY CHECK(id=1), started_at TEXT NOT NULL, total_views BIGINT NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS traffic_daily (
+ day TEXT NOT NULL, source TEXT NOT NULL, views BIGINT NOT NULL, PRIMARY KEY(day,source)
+);
+CREATE TABLE IF NOT EXISTS traffic_seen (
+ event_id TEXT PRIMARY KEY, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS traffic_seen_time ON traffic_seen(created_at);

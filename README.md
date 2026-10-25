@@ -24,7 +24,7 @@ Dependencies and video screening are installed in this workspace. For a new copy
 - No black/covered/off camera, no shirtless appearance for anyone, nudity, exposed private parts or sexual activity. Keep face visible with good lighting and remain fully clothed.
 - Automated prohibited-exposure flags stop media immediately and suspend the source account pending review. A moderator confirms violations and bans; darkness or a technical fault alone does not prove misconduct. Automated screening can miss violations or flag mistakes.
 - Camera images and audio are processed in memory, without recording. This is server-readable media, not end-to-end encryption. Privacy, terms and rules explain actual behavior and outstanding operator details.
-- No ad SDK, analytics tracker, payment system or app-store listing is active.
+- No ad SDK, third-party analytics, payment system or app-store listing is active. Private first-party page-view totals are available to the configured owner.
 
 ## Development and verification
 
@@ -53,3 +53,13 @@ See `docs/deployment.md` for configuration and remaining public-launch work. A P
 Brevo HTTPS delivery is implemented so the application can send recovery emails without SMTP ports. In Render’s secret environment settings, configure `EMAIL_MODE=brevo`, `BREVO_API_KEY`, `EMAIL_FROM` (a sender verified in the email-provider account) and optionally `EMAIL_FROM_NAME=HelloAgain`. Store the API key in the hosting secret manager. Production refuses local-only mail and incomplete Brevo configuration. A verified sender and restricted key are configured on Render. Brevo confirmed delivery of the owner-approved recovery test; see docs/public-pilot.md. Keys and recipient details are not committed.
 
 SMTP remains supported on hosts that permit it. The local Windows preview keeps its private local-email outbox. The owner chose email setup before public launch.
+
+## Private traffic dashboard
+
+Set the server-only `ANALYTICS_OWNER_EMAIL` to the email of the existing owner account and restart/deploy. Leave it empty to disable collection. The signed-in owner sees **Private traffic** in the header and can open `/owner/traffic`. Other members, moderation admins and signed-out requests cannot read `/api/owner/traffic`; no counts appear on the public homepage or public configuration.
+
+One visible homepage document load counts as one page view. Reloads are separate views, not unique visitors. A random per-page ID deduplicates retries for 24 hours; no visitor ID or analytics cookie is created. Known bot user agents, signed-in owner visits and DNT/GPC requests are excluded. A local owner-browser preference also suppresses that browser after sign-out. Source attribution sends only one category (Instagram, Facebook, YouTube, Google, other or direct/unknown), never a full URL/referrer. Counts remain estimates; privacy tools, hidden referrers, unrecognized bots and abuse throttling can affect them.
+
+The private dashboard shows today, 7-day, 30-day and running totals, daily views and sources. Days use IST. Daily aggregates expire after 90 days; the running total persists while the database exists. Traffic data contains no IP, account, message or camera information. The separate abuse limiter uses a short-lived hashed network key. This update cannot reconstruct visits from before tracking began. The free pilot database still expires on 20 November 2026, including these aggregates.
+
+Use the Instagram link offered inside the dashboard to label promotion traffic. `npm run check` includes authorization, privacy exclusions, retry deduplication, retention and source-classification tests.
