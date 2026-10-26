@@ -2,7 +2,7 @@ import {post} from './api.js';
 
 export function trafficSource(search,referrer){
  const campaign=new URLSearchParams(search).get('utm_source')?.toLowerCase();
- const aliases={ig:'instagram',instagram:'instagram',fb:'facebook',facebook:'facebook',yt:'youtube',youtube:'youtube',google:'google'};
+ const aliases={ig:'instagram',instagram:'instagram',fb:'facebook',facebook:'facebook',yt:'youtube',youtube:'youtube',google:'google',member_share:'referral'};
  if(campaign)return aliases[campaign]||'other';
  try{
   const host=new URL(referrer).hostname.toLowerCase();

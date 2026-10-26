@@ -57,7 +57,7 @@ test('disabled analytics collects nothing and source classification only emits b
  const f=await setup(t,false),anon=f.client(),owner=await f.signup('owner');assert.equal(owner.user.canViewTraffic,false);
  await anon.call('/traffic/pageview',{body:{eventId:randomUUID(),source:'instagram'}});
  assert.equal((await f.store.transaction(db=>db.all('SELECT * FROM traffic_meta'))).length,0);assert.equal((await f.store.transaction(db=>db.all('SELECT * FROM traffic_seen'))).length,0);
- assert.equal(trafficSource('?utm_source=IG',''),'instagram');assert.equal(trafficSource('?utm_source=anything-private',''),'other');assert.equal(trafficSource('','https://l.instagram.com/a?secret=1'),'instagram');assert.equal(trafficSource('','https://instagram.com.evil.example'),'other');assert.equal(trafficSource('',''),'direct');
+ assert.equal(trafficSource('?utm_source=IG',''),'instagram');assert.equal(trafficSource('?utm_source=member_share',''),'referral');assert.equal(trafficSource('?utm_source=anything-private',''),'other');assert.equal(trafficSource('','https://l.instagram.com/a?secret=1'),'instagram');assert.equal(trafficSource('','https://instagram.com.evil.example'),'other');assert.equal(trafficSource('',''),'direct');
 });
 
 

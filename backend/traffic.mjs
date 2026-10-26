@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { fail, hashToken, limit } from './security.mjs';
 
-const sources=['direct','instagram','facebook','youtube','google','other'];
+const sources=['direct','instagram','facebook','youtube','google','referral','other'];
 const event=z.object({eventId:z.uuid(),source:z.enum(sources)}).strict();
 export const trafficDay=(time=Date.now())=>new Date(time+19800000).toISOString().slice(0,10);
 const dayAgo=(days,time=Date.now())=>trafficDay(time-days*86400000);

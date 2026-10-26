@@ -4,7 +4,7 @@ import {api} from './api';
 import CommunityActivity from './CommunityActivity';
 import './owner-traffic.css';
 
-const labels={direct:'Direct / unknown',instagram:'Instagram',facebook:'Facebook',youtube:'YouTube',google:'Google',other:'Other'};
+const labels={direct:'Direct / unknown',instagram:'Instagram',facebook:'Facebook',youtube:'YouTube',google:'Google',referral:'Friend shares',other:'Other'};
 const number=n=>new Intl.NumberFormat('en-IN').format(n);
 const date=value=>new Intl.DateTimeFormat('en-IN',{day:'numeric',month:'short',year:'numeric',timeZone:'Asia/Kolkata'}).format(new Date(value));
 

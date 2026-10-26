@@ -75,3 +75,7 @@ The public repository's `.github/workflows/availability.yml` checks `/api/health
 These inbound requests can reduce Render's 15-minute idle spin-downs. They are not page views, sessions, logins or active users. This is best-effort availability monitoring: GitHub schedules can be delayed or disabled after 60 days without repository activity; Render can restart services and still applies the shared 750 free instance-hours per workspace/month and other limits. Keeping HelloAgain awake consumes those shared hours, which may affect other free services. Never describe this as guaranteed always-on hosting. No paid compute plan or larger runner is enabled. Disable the workflow from GitHub Actions to stop the checks.
 
 References: https://render.com/docs/free and https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule . The free pilot database still needs moving before 20 November 2026.
+
+## Sharing and Instagram
+
+The live-chat footer links to the confirmed public page `https://www.instagram.com/helloagain.live/` and offers a user-initiated Share HelloAgain action. Supported devices open their share sheet; other browsers copy an invitation link. Only an explicit visitor action shares anything. Tagged invitations appear as Friend shares in private traffic sources; Instagram-tagged profile links appear as Instagram. Share previews use the existing brand artwork at `/share-preview.png`, with adult-only product copy. No Instagram SDK, automatic posting, contact upload or bulk messaging is embedded in the site.

@@ -21,3 +21,12 @@ The interactive demonstration page, four synthetic demo participants, generated 
 ## Limits of verification
 
 The Render Docker deployment, encrypted hosted PostgreSQL, real Brevo HTTPS recovery-email delivery and two simultaneous public-host media calls have passed the checks recorded in public-pilot.md. An actual physical two-device camera session has not been validated. No sustained throughput/load or broad model-accuracy evaluation has been completed. Real cameras, clothing, lighting and network conditions vary. The screening worker cannot guarantee prevention of every unsafe image or verify real gender/age/liveness. Broad promotion still needs the operator measures in deployment.md.
+
+
+## 26 October: traffic and active accounts
+
+The new suite passes all 26 tests and the production client build. Tests cover owner-only traffic reads (including denial to other admins), no public traffic totals, deduplication, owner/bot/DNT/GPC exclusions, bounded source labels and retention. Regular-member activity tests verify only recent active accounts with unexpired sessions count, multiple sessions count once, stale/demo/banned/expired accounts are excluded and returning accounts become active again. Traffic read endpoints remain separate from member-visible aggregate activity.
+
+An isolated browser preview signed in with an ordinary disposable member. Both Live chat and Your account displayed 1 total / 1 man / 0 women for that preview; no private-traffic navigation was present. These preview numbers are not public-site statistics. The original public host continues to require authentication for `/api/owner/traffic` and uses `no-store`; `/owner/traffic` has `noindex, nofollow`.
+
+The availability monitor's first hosted run passed in GitHub Actions: https://github.com/LAXMINARAYAN24/HelloAgain/actions/runs/40327527166 . Its scheduled public health requests create neither visitor views nor authenticated activity. This is a best-effort free-plan mitigation, not an uptime guarantee.
