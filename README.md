@@ -63,3 +63,7 @@ One visible homepage document load counts as one page view. Reloads are separate
 The private dashboard shows today, 7-day, 30-day and running totals, daily views and sources. Days use IST. Daily aggregates expire after 90 days; the running total persists while the database exists. Traffic data contains no IP, account, message or camera information. The separate abuse limiter uses a short-lived hashed network key. This update cannot reconstruct visits from before tracking began. The free pilot database still expires on 20 November 2026, including these aggregates.
 
 Use the Instagram link offered inside the dashboard to label promotion traffic. `npm run check` includes authorization, privacy exclusions, retry deduplication, retention and source-classification tests.
+
+## Active community counts
+
+All signed-in members can see the total, men and women active in the last two minutes, on Live chat and Your account. The owner dashboard includes the same aggregate. Counts use recent authenticated requests and at least one unexpired session, deduplicate multiple tabs/sessions, and exclude demo, suspended and banned accounts. Closing a page can leave its account in the count for up to two minutes; signing out of the last session removes it. Gender is self-declared. The component refreshes every 15 seconds while visible and shows an unavailable message if the request fails. It never invents a zero or lists individual members. Page-view history and traffic sources remain owner-only.

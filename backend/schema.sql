@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS sessions (
  expires_at TEXT NOT NULL, created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS users_activity ON users(status,is_demo,last_seen);
 CREATE TABLE IF NOT EXISTS account_tokens (
  token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  expires_at TEXT NOT NULL, created_at TEXT NOT NULL

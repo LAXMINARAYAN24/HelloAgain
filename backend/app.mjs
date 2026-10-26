@@ -82,6 +82,12 @@ export async function createApplication(options={}){
  route('get','/api/config',async()=>({brand:'HelloAgain',demo,videoEnabled:video.ready(),videoReason:video.ready()?'Random live calls are available after both adults press Start. Each transmitted picture is screened on this server.':'Live video is locked because camera screening is unavailable.',interests:INTERESTS,colors:COLORS,consentVersion:consent}),{auth:false});
  route('post','/api/traffic/pageview',(db,u,req)=>traffic.record(db,u,req),{auth:false});
  route('get','/api/owner/traffic',(db,u)=>traffic.overview(db,u));
+ route('get','/api/community/activity',async db=>{
+   const updatedAt=now(),cutoff=new Date(Date.parse(updatedAt)-120000).toISOString();
+   const rows=await db.all("SELECT u.gender,COUNT(*) AS total FROM users u WHERE u.status='active' AND u.is_demo=0 AND u.last_seen>=? AND EXISTS (SELECT 1 FROM sessions s WHERE s.user_id=u.id AND s.expires_at>?) GROUP BY u.gender",[cutoff,updatedAt]);
+   const men=Number(rows.find(r=>r.gender==='man')?.total??0),women=Number(rows.find(r=>r.gender==='woman')?.total??0);
+   return {total:men+women,men,women,windowSeconds:120,updatedAt};
+ });
  app.get('/api/health',(_req,res)=>res.json({ok:true}));
  route('get','/api/me',async(_db,u)=>({user:u?selfProfile(u):null}),{auth:false});
  route('post','/api/auth/signup',async(db,_u,req,res)=>{

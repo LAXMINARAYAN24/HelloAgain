@@ -12,7 +12,7 @@ async function setup(t,enabled=true){
  t.after(async()=>{server.closeAllConnections();await new Promise(r=>server.close(r));await runtime.close();});
  const base=`http://127.0.0.1:${server.address().port}/api`;
  const client=()=>{let cookie='';return {async call(path,{body,headers={}}={}){const r=await fetch(base+path,{method:body?'POST':'GET',headers:{...(body?{'Content-Type':'application/json',Origin:'http://localhost:4310'}:{}),Cookie:cookie,'User-Agent':'Traffic test browser',...headers},body:body?JSON.stringify(body):undefined});if(r.headers.get('set-cookie'))cookie=r.headers.get('set-cookie').split(';')[0];return {status:r.status,body:await r.json(),headers:r.headers};}};};
- const signup=async(name)=>{const c=client();const r=await c.call('/auth/signup',{body:{email:name+'@example.test',password:'A-long-testing-password!',name,dob:'1990-01-01',gender:'man',acceptRules:true,acceptPrivacy:true}});assert.equal(r.status,201);return {...c,user:r.body.user};};
+ const signup=async(name,gender='man')=>{const c=client();const r=await c.call('/auth/signup',{body:{email:name+'@example.test',password:'A-long-testing-password!',name,dob:'1990-01-01',gender,acceptRules:true,acceptPrivacy:true}});assert.equal(r.status,201);return {...c,user:r.body.user};};
  return {...runtime,client,signup};
 }
 
@@ -58,4 +58,28 @@ test('disabled analytics collects nothing and source classification only emits b
  await anon.call('/traffic/pageview',{body:{eventId:randomUUID(),source:'instagram'}});
  assert.equal((await f.store.transaction(db=>db.all('SELECT * FROM traffic_meta'))).length,0);assert.equal((await f.store.transaction(db=>db.all('SELECT * FROM traffic_seen'))).length,0);
  assert.equal(trafficSource('?utm_source=IG',''),'instagram');assert.equal(trafficSource('?utm_source=anything-private',''),'other');assert.equal(trafficSource('','https://l.instagram.com/a?secret=1'),'instagram');assert.equal(trafficSource('','https://instagram.com.evil.example'),'other');assert.equal(trafficSource('',''),'direct');
+});
+
+
+test('regular members see only recent signed-in account aggregates by gender, with no duplicated sessions',async t=>{
+ const f=await setup(t),anon=f.client(),man=await f.signup('member'),woman=await f.signup('woman','woman'),stale=await f.signup('stale','woman'),demo=await f.signup('sample'),banned=await f.signup('banned'),expired=await f.signup('expired');
+ assert.equal((await anon.call('/community/activity')).status,401);
+ await f.store.transaction(async db=>{
+  await db.run('UPDATE users SET last_seen=? WHERE id=?',[new Date(Date.now()-121000).toISOString(),stale.user.id]);
+  await db.run('UPDATE users SET is_demo=1 WHERE id=?',[demo.user.id]);
+  await db.run("UPDATE users SET status='banned' WHERE id=?",[banned.user.id]);
+  await db.run("UPDATE sessions SET expires_at='2020-01-01T00:00:00Z' WHERE user_id=?",[expired.user.id]);
+  await db.run('INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)',[randomUUID(),woman.user.id,new Date(Date.now()+60000).toISOString(),new Date().toISOString()]);
+ });
+ const result=await man.call('/community/activity');assert.equal(result.status,200);assert.equal(result.headers.get('cache-control'),'no-store');
+ assert.deepEqual(Object.keys(result.body).sort(),['men','total','updatedAt','windowSeconds','women']);
+ assert.equal(result.body.total,2);assert.equal(result.body.men,1);assert.equal(result.body.women,1);assert.equal(result.body.windowSeconds,120);
+ assert.equal(man.user.canViewTraffic,false);assert.equal((await man.call('/owner/traffic')).status,403);
+ await woman.call('/auth/logout',{body:{}});
+ // Another valid session still counts the same account once.
+ assert.equal((await man.call('/community/activity')).body.total,2);
+ await f.store.transaction(db=>db.run('DELETE FROM sessions WHERE user_id=?',[woman.user.id]));
+ assert.equal((await man.call('/community/activity')).body.total,1);
+ // Returning after inactivity makes this account active again.
+ assert.equal((await stale.call('/community/activity')).body.total,2);
 });
