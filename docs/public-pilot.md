@@ -35,3 +35,14 @@ Two simultaneous calls, fifteen minutes per call, one application instance. Text
 The test demonstration UI and alternate test login remain removed. Development checks do not appear on the public homepage. Automated checks use synthetic clothed media and disposable accounts, which are deleted after the check.
 
 This is a limited pilot. Real-device camera/microphone and public-network latency checks, varied moderation evaluation, operational support/appeals, age assurance, final operator notices and backup/recovery procedures remain necessary before broad promotion. Automated camera screening does not guarantee that every violation is detected or that age, gender or liveness is verified. Ads and an Android/Play Store application are not implemented.
+
+
+## 26 October update: traffic, member activity and sharing
+
+Current deployed application source: `7f19cdc` (private traffic, recent active accounts, referral/Instagram sharing and share previews). The active-account implementation was first deployed as `f33cc38`, and the owner environment was selected for the current Lucky account. No owner email, password, API key or session cookie is committed. Page views are measured from activation on 26 October, without reconstructing older visits.
+
+The build and all 26 tests pass. In an isolated browser, an ordinary member sees recent Total / Men / Women aggregates on Live chat and Your account, while private traffic is denied. The server remains responsible for owner authorization. No public counter, profile directory or test demonstration was added.
+
+The public-repository availability workflow (`afde4c1`) requests only `/api/health` approximately every ten minutes. Its first GitHub-hosted check completed successfully: https://github.com/LAXMINARAYAN24/HelloAgain/actions/runs/40327527166 . The monitor has no repository permissions, credentials, checkout, external actions or larger runner. It does not count as a visitor or signed-in active user. GitHub schedule delays, no-activity disabling, Render restarts and shared free-instance hour limits remain applicable. Keeping the service active consumes the workspace's shared allowance; this is not guaranteed always-on production hosting.
+
+The website links to the user-confirmed `@helloagain.live` and offers deliberate visitor sharing. Friend referrals and Instagram links are source categories in private traffic. A free health check and share links do not create an advertising campaign or guarantee audience growth. Instagram posts must be verified separately before being described as published. The free database still expires on 20 November 2026.
