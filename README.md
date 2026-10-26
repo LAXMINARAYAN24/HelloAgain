@@ -67,3 +67,11 @@ Use the Instagram link offered inside the dashboard to label promotion traffic. 
 ## Active community counts
 
 All signed-in members can see the total, men and women active in the last two minutes, on Live chat and Your account. The owner dashboard includes the same aggregate. Counts use recent authenticated requests and at least one unexpired session, deduplicate multiple tabs/sessions, and exclude demo, suspended and banned accounts. Closing a page can leave its account in the count for up to two minutes; signing out of the last session removes it. Gender is self-declared. The component refreshes every 15 seconds while visible and shows an unavailable message if the request fails. It never invents a zero or lists individual members. Page-view history and traffic sources remain owner-only.
+
+## Free availability checks
+
+The public repository's `.github/workflows/availability.yml` checks `/api/health` about every ten minutes, with short retries for cold starts. A workflow-file push and manual Run workflow can also trigger it. The job uses a standard Ubuntu runner, no checkout, no third-party actions, no repository permissions and no secrets. It is guarded to run only in this original public repository, so a private repository or fork does not run the check.
+
+These inbound requests can reduce Render's 15-minute idle spin-downs. They are not page views, sessions, logins or active users. This is best-effort availability monitoring: GitHub schedules can be delayed or disabled after 60 days without repository activity; Render can restart services and still applies the shared 750 free instance-hours per workspace/month and other limits. Keeping HelloAgain awake consumes those shared hours, which may affect other free services. Never describe this as guaranteed always-on hosting. No paid compute plan or larger runner is enabled. Disable the workflow from GitHub Actions to stop the checks.
+
+References: https://render.com/docs/free and https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule . The free pilot database still needs moving before 20 November 2026.

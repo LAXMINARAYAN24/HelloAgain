@@ -1,0 +1,48 @@
+name: HelloAgain availability
+
+on:
+  schedule:
+    - cron: '3,13,23,33,43,53 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/availability.yml]
+
+# This public-site check needs no repository access, credentials, checkout or external actions.
+permissions: {}
+
+concurrency:
+  group: helloagain-availability
+  cancel-in-progress: false
+
+jobs:
+  health:
+    if: github.repository == 'LAXMINARAYAN24/HelloAgain' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the public service and allow a cold start
+        shell: python
+        run: |
+          import json
+          import time
+          import urllib.request
+
+          url = 'https://helloagain-live.onrender.com/api/health'
+          for attempt in range(3):
+              try:
+                  request = urllib.request.Request(url, headers={
+                      'User-Agent': 'HelloAgain-Availability-Monitor',
+                      'Cache-Control': 'no-cache',
+                      'DNT': '1',
+                  })
+                  with urllib.request.urlopen(request, timeout=70) as response:
+                      if response.status != 200 or json.load(response).get('ok') is not True:
+                          raise RuntimeError('Unexpected health response')
+                  print('HelloAgain public health check passed. No visitor or active-user event was sent.')
+                  break
+              except Exception as error:
+                  print('Health check attempt', attempt + 1, 'failed:', type(error).__name__)
+                  if attempt == 2:
+                      raise SystemExit('HelloAgain did not become healthy within the retry window.')
+                  time.sleep(5)
