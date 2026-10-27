@@ -30,3 +30,11 @@ The new suite passes all 26 tests and the production client build. Tests cover o
 An isolated browser preview signed in with an ordinary disposable member. Both Live chat and Your account displayed 1 total / 1 man / 0 women for that preview; no private-traffic navigation was present. These preview numbers are not public-site statistics. The original public host continues to require authentication for `/api/owner/traffic` and uses `no-store`; `/owner/traffic` has `noindex, nofollow`.
 
 The availability monitor's first hosted run passed in GitHub Actions: https://github.com/LAXMINARAYAN24/HelloAgain/actions/runs/40327527166 . Its scheduled public health requests create neither visitor views nor authenticated activity. This is a best-effort free-plan mitigation, not an uptime guarantee.
+
+## 27 October production check
+
+The chosen owner account successfully opened `/owner/traffic` in the browser, including daily views, source categories, the tracking start date and member activity. Observed private figures are intentionally omitted from this public repository. Anonymous requests to the traffic and community-activity endpoints return 401 with no-store caching. The share-preview PNG returns 200, and the public HTML includes Open Graph metadata and the expected deployed client build.
+
+The existing public Instagram Reel was reposted from the user-owned brand account with a brief 18+ link-in-bio note. No duplicate video upload, paid boost or direct messages were used. Screenshots and detailed private verification remain outside this repository.
+
+GitHub's workflow history showed successful scheduled runs at approximately 00:42, 04:36 and 07:30 IST on 27 October. These gaps are much longer than the configured ten-minute schedule and cannot reliably prevent Render idle spin-downs. A separate free five-minute scheduler is being prepared; it must not be described as active until its account setup, job creation and test execution are confirmed.
